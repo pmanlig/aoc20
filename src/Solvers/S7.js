@@ -1,6 +1,5 @@
 // import React from 'react';
 import Solver from './Solver';
-import { Computer } from './IntCode';
 
 export class S7a extends Solver {
 	solve(input) {
