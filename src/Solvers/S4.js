@@ -48,7 +48,7 @@ class Passport {
 				return false;
 			}
 		}
-		if (!/^#[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]$/.test(this.hcl)) {
+		if (!/^#[0-9a-f]{6}$/.test(this.hcl)) {
 			if (debug) console.log("Invalid hair color");
 			return false;
 		}
@@ -56,7 +56,7 @@ class Passport {
 			if (debug) console.log("Invalid eye color");
 			return false;
 		}
-		if (!/^\d\d\d\d\d\d\d\d\d$/.test(this.pid)) {
+		if (!/^\d{9}$/.test(this.pid)) {
 			if (debug) console.log("Invalid passport ID");
 			return false;
 		}
