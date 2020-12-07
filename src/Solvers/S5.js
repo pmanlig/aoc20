@@ -2,27 +2,11 @@
 import Solver from './Solver';
 
 export class S5a extends Solver {
-	seat(code) {
-		let r = 0, c = 0;
-		for (let i = 0; i < 7; i++) {
-			r = r << 1;
-			if (code[i] === 'B') r++;
-		}
-		for (let j = 7; j < 10; j++) {
-			c = c << 1;
-			if (code[j] === 'R') c++;
-		}
-		return { row: r, col: c, id: 8 * r + c };
-	}
-
 	solve(input) {
-		input = input.split('\n').map(c => this.seat(c));
-		let sorted = input.map(x => x.id).sort((a, b) => a - b);
-		console.log(sorted);
-		let mySeat = sorted[0], i = 0;
-		while (sorted[i++] === mySeat++) { }
-		mySeat--;
-		this.setState({ solution: `Lines: ${input.length}\nHigh: ${Math.max(...input.map(x => x.id))}\nMy seat: ${mySeat}` });
+		let sorted = input.replace(/F|L/g, "0").replace(/B|R/g, "1").split('\n').map(c => parseInt(c, 2)).sort((a, b) => a - b);
+		let high = sorted[sorted.length - 1];
+		let empty = sorted.find((id, i, a) => i < a.length - 1 && a[i + 1] !== id + 1) + 1;
+		this.setState({ solution: `Lines: ${input.length}\nHigh: ${high}\nMy seat: ${empty}` });
 	}
 }
 
