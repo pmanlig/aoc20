@@ -1,3 +1,10 @@
+export class Instruction {
+	constructor(i, a) {
+		this.instr = i;
+		this.arg = a;
+	}
+}
+
 export class Computer {
 	acc = (i) => {
 		this.res += i;
@@ -10,6 +17,10 @@ export class Computer {
 
 	nop = () => {
 		return 1;
+	}
+
+	static parse(prg) {
+		return prg.split('\n').map(l => new Instruction(l.match(/^\w+/).shift(), parseInt(l.match(/[-\d]+$/).shift(), 10)));
 	}
 
 	constructor(prg) {
@@ -25,10 +36,8 @@ export class Computer {
 
 	run(log) {
 		while (this.ip < this.prg.length) {
-			let i = this.prg[this.ip].substring(0, 3);
-			let a = this.prg[this.ip].match(/[-\d]+/)[0];
-			if (log) console.log(`${this.ip}: ${this.prg[this.ip]}, (${typeof this.prg[this.ip]}), Res: ${this.res}, Ins: ${i}, Val: ${a}`);
-			this.ip += this.instructions[i](parseInt(a, 10));
+			if (log) console.log(`${this.ip}: ${this.prg[this.ip].instr} ${this.prg[this.ip].arg}, Res: ${this.res}`);
+			this.ip += this.instructions[this.prg[this.ip].instr](this.prg[this.ip].arg);
 		}
 	}
 
@@ -36,10 +45,8 @@ export class Computer {
 		let seen = [];
 		while (!seen.includes(this.ip) && this.ip < this.prg.length) {
 			seen.push(this.ip);
-			let i = this.prg[this.ip].substring(0, 3);
-			let a = this.prg[this.ip].match(/[-\d]+/)[0];
-			if (log) console.log(`${this.ip}: ${this.prg[this.ip]}, (${typeof this.prg[this.ip]}), Res: ${this.res}, Ins: ${i}, Val: ${a}`);
-			this.ip += this.instructions[i](parseInt(a, 10));
+			if (log) console.log(`${this.ip}: ${this.prg[this.ip].instr} ${this.prg[this.ip].arg}, Res: ${this.res}`);
+			this.ip += this.instructions[this.prg[this.ip].instr](this.prg[this.ip].arg);
 		}
 	}
 }

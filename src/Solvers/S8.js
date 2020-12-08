@@ -1,24 +1,18 @@
 // import React from 'react';
 import Solver from './Solver';
-import {Computer} from '../util/Acc';
+import { Computer, Instruction } from '../util/Acc';
 
 export class S8a extends Solver {
 	solve(input) {
-		input = input.split('\n');
+		input = Computer.parse(input);
 		let cmp = new Computer(input);
 		cmp.debug();
 		let stop = cmp.res;
 		let ok = 0;
 		for (let i = 0; i < input.length; i++) {
-			if (input[i].startsWith("acc")) continue;
+			if (input[i].instr === "acc") continue;
 			let patch = input.concat([]);
-			let instr = patch[i];
-			if (patch[i].startsWith("nop")) {
-				instr = instr.replace("nop", "jmp");
-			} else {
-				instr = instr.replace("jmp", "nop");
-			}
-			patch.splice(i, 1, instr);
+			patch.splice(i, 1, new Instruction(input[i].instr === "nop" ? "jmp" : "nop", input[i].arg));
 			cmp = new Computer(patch);
 			cmp.debug();
 			if (cmp.ip === patch.length) {
