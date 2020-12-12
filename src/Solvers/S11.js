@@ -76,11 +76,8 @@ export class S11a extends Solver {
 	solve(input) {
 		// let test = new Map("L.LL.LL.LL\nLLLLLLL.LL\nL.L.L..L..\nLLLL.LL.LL\nL.LL.LL.LL\nL.LLLLL.LL\n..L.L.....\nLLLLLLLLLL\nL.LLLLLL.L\nL.LLLLL.LL");
 		let map = new Map(input), map2 = new Map(input);
-		let n = new Date();
 		while (map.tick(1)) { }
 		while (map2.tick(2)) { }
-		let e = new Date();
-		console.log(`${e - n}ms`);
 		this.setState({ map: map, map2: map2 });
 	}
 
