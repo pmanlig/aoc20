@@ -60,11 +60,15 @@ class BitMasker1 {
 			this.writeMem(inst);
 		}
 	}
+
+	sum() {
+		return this.data.reduce((a, b) => a + b, 0);
+	}
 }
 
 class BitMasker2 {
 	constructor() {
-		this.data = [];
+		this.data = {};
 	}
 
 	setMask(inst) {
@@ -95,7 +99,7 @@ class BitMasker2 {
 		inst = inst.match(/^mem\[(\d+)] = (\d+)/);
 		let addr = this.generateAddresses(parseInt(inst[1], 10));
 		let val = parseInt(inst[2], 10);
-		this.data = this.data.filter(x => addr.find(y => y === x.addr) === undefined).concat(addr.map(a => { return { addr: a, val: val }; }));
+		addr.forEach(a => this.data[a] = val);
 	}
 
 	parse(inst) {
@@ -104,6 +108,10 @@ class BitMasker2 {
 		} else {
 			this.writeMem(inst);
 		}
+	}
+
+	sum() {
+		return Object.keys(this.data).map(k => this.data[k]).reduce((a, b) => a + b, 0);
 	}
 }
 
@@ -117,7 +125,7 @@ export class S14a extends Solver {
 			mask1.parse(i);
 			mask2.parse(i);
 		});
-		this.setState({ solution: `Sum(1): ${mask1.data.reduce((a, b) => a + b, 0)}\nSum(2): ${mask2.data.reduce((a, b) => a + b.val, 0)}` });
+		this.setState({ solution: `Sum(1): ${mask1.sum()}\nSum(2): ${mask2.sum()}` });
 	}
 }
 
