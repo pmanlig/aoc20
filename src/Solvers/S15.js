@@ -14,7 +14,8 @@ export class S15a extends Solver {
 	}
 
 	solve(input) {
-		this.numbers = {};
+		// input = "0,3,6";
+		this.numbers = [];
 		let numbers = input.split(',').map(n => parseInt(n, 10));
 		this.count = 1;
 		for (let i = 0; i < numbers.length - 1; i++) {
@@ -23,11 +24,13 @@ export class S15a extends Solver {
 		this.lastNum = numbers[numbers.length - 1];
 		while (this.count < 2020) {
 			this.newNum();
+			// numbers.push(this.lastNum);
 		}
 		let num2020 = this.lastNum;
 		while (this.count < 30000000) {
 			this.newNum();
 		}
+		// console.log(numbers.join(','));
 		this.setState({ solution: `Element #2020: ${num2020}\nElement #30000000: ${this.lastNum}` });
 	}
 }
