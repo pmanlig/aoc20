@@ -43,6 +43,7 @@ export class S16a extends Solver {
 				}
 			});
 		}
+		// console.log(myTicket.map(f => f.fields[0].name).join(','));
 		let ticketVals = myTicket.filter(f => f.fields[0].name.startsWith("departure")).map(f => f.val);
 		this.setState({ solution: `Error rate: ${error}\nMy ticket values: ${ticketVals.reduce((a, b) => a * b, 1)}` });
 	}

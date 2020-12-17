@@ -82,7 +82,7 @@ export class S11a extends Solver {
 	}
 
 	customRender() {
-		let map = this.state.map, map2 = this.state.map2;
+		let { map, map2 } = this.state;
 		return <div>
 			{map && <p>{`Map size: ${map.data[0].length}×${map.data.length}`}</p>}
 			{map && <p>{`Map 1 steps: ${map.steps}, Seats occupied: ${map.countOccupied()}`}</p>}
