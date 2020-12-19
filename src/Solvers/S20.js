@@ -3,7 +3,8 @@ import Solver from './Solver';
 
 export class S20a extends Solver {
 	solve(input) {
-		this.setState({ solution: "No solution yet" });
+		input = input.split('\n');
+		this.setState({ solution: `Input length: ${input.length}` });
 	}
 }
 
