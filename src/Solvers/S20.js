@@ -1,6 +1,6 @@
 import React from 'react';
 import Solver from './Solver';
-import { ValueGrid, drawFilledRect, drawFilledCircle, drawLine, pad } from '../util';
+import { ValueGrid, drawFilledRect, drawFilledCircle, drawLine, reverseArray } from '../util';
 
 const left = 0;
 const right = 1;
@@ -8,10 +8,6 @@ const top = 2;
 const bottom = 3;
 const reverse = 4;
 const pixel_size = 4;
-
-function reverseArray(a) {
-	return [].concat(a).reverse();
-}
 
 class Tile extends ValueGrid {
 	constructor(id, data) {
@@ -112,31 +108,6 @@ class Tile extends ValueGrid {
 			return true;
 		}
 		return false;
-	}
-
-	debugData() {
-		console.log(this.data[0].join(''));
-		console.log(this.data[1].join(''));
-		console.log(this.data[2].join(''));
-		console.log(this.data[3].join(''));
-		console.log(this.data[4].join(''));
-		console.log(this.data[5].join(''));
-		console.log(this.data[6].join(''));
-		console.log(this.data[7].join(''));
-		console.log(this.data[8].join(''));
-		console.log(this.data[9].join(''));
-	}
-
-	debugBorders() {
-		console.log(`[${this.borders.join(", ")}]`);
-		console.log(`Left: ${pad(this.borders[left].toString(2), 10, '0')}`);
-		console.log(`Right: ${pad(this.borders[right].toString(2), 10, '0')}`);
-		console.log(`Top: ${pad(this.borders[top].toString(2), 10, '0')}`);
-		console.log(`Bottom: ${pad(this.borders[bottom].toString(2), 10, '0')}`);
-	}
-
-	toString() {
-		return this.data.map(r => r.join('')).join('\n');
 	}
 }
 
@@ -277,7 +248,7 @@ export class S20a extends Solver {
 			}
 		}
 		if (0 === c) {
-			// m.flipHorizontal();
+			// m.flipHorizontal(); // ToDo: generalize
 			c = m.countMonsters();
 		}
 		if (0 === c) {

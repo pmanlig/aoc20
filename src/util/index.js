@@ -7,3 +7,7 @@ export function pad(s, len, padChar) {
 	while (s.length < len) { s = padChar + s; }
 	return s;
 }
+
+export function reverseArray(a) {
+	return [].concat(a).reverse();
+}
