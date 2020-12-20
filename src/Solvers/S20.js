@@ -1,10 +1,357 @@
-// import React from 'react';
+import React from 'react';
 import Solver from './Solver';
 
+const left = 0;
+const right = 1;
+const top = 2;
+const bottom = 3;
+const reverse = 4;
+
+function reverseArray(a) {
+	return [].concat(a).reverse();
+}
+
+class CharMap {
+	constructor(data) {
+		this.data = data;
+	}
+
+	rotate() { // clockwise
+		let d = this.data.map(r => []);
+		for (let r = this.data.length - 1; r >= 0; r--) {
+			for (let c = 0; c < this.data[r].length; c++) {
+				d[c].push(this.data[r][c]);
+			}
+		}
+		this.data = d;
+	}
+
+	flipLateral() {
+		this.data = this.data.map(r => r.reverse());
+	}
+
+	flipHorizontal() {
+		this.data.reverse();
+	}
+}
+
+class Tile {
+	constructor(id, data) {
+		this.id = id;
+		this.data = data;
+		this.borders = [];
+		this.calculateBorders();
+	}
+
+	static fromText(txt) {
+		txt = txt.split('\n');
+		let id = parseInt(txt.shift().match(/^Tile (\d+):/)[1], 10);
+		let data = txt.map(r => r.split('').map(c => c === '.' ? '0' : '1'));
+		return new Tile(id, data);
+	}
+
+	calculateBorders() {
+		this.borders[top] = parseInt(this.data[0].join(''), 2);
+		this.borders[reverse + top] = parseInt(reverseArray(this.data[0]).join(''), 2);
+		this.borders[bottom] = parseInt(this.data[9].join(''), 2);
+		this.borders[reverse + bottom] = parseInt(reverseArray(this.data[9]).join(''), 2);
+		let l = [];
+		let r = [];
+		this.data.forEach(line => {
+			l.push(line[0]);
+			r.push(line[9]);
+		});
+		this.borders[left] = parseInt(l.join(''), 2);
+		this.borders[reverse + left] = parseInt(reverseArray(l).join(''), 2);
+		this.borders[right] = parseInt(r.join(''), 2);
+		this.borders[reverse + right] = parseInt(reverseArray(r).join(''), 2);
+	}
+
+	rotate() { // clockwise
+		let d = this.data.map(r => []);
+		for (let r = this.data.length - 1; r >= 0; r--) {
+			for (let c = 0; c < this.data[r].length; c++) {
+				d[c].push(this.data[r][c]);
+			}
+		}
+		this.data = d;
+		this.calculateBorders();
+	}
+
+	flipLateral() {
+		this.data = this.data.map(r => r.reverse());
+		this.calculateBorders();
+	}
+
+	flipHorizontal() {
+		this.data.reverse();
+		this.calculateBorders();
+	}
+
+	orient(dir) {
+		if (dir === right) {
+			this.flipLateral();
+		}
+		if (dir === top) {
+			this.rotate();
+			this.flipLateral();
+		}
+		if (dir === bottom) {
+			this.flipLateral();
+			this.rotate();
+			this.flipLateral();
+		}
+	}
+
+	matchLeft(x) {
+		if (this.borders[right] === x) { return true; }
+		if (this.borders[reverse + right] === x) {
+			this.flipHorizontal();
+			return true;
+		}
+		if (this.borders[left] === x) {
+			this.flipLateral();
+			return true;
+		}
+		if (this.borders[reverse + left] === x) {
+			this.flipHorizontal();
+			this.flipLateral();
+			return true;
+		}
+		if (this.borders[top] === x) {
+			this.rotate();
+			return true;
+		}
+		if (this.borders[reverse + top] === x) {
+			this.rotate();
+			this.flipHorizontal();
+			return true;
+		}
+		if (this.borders[bottom] === x) {
+			this.rotate();
+			this.flipLateral();
+			return true;
+		}
+		if (this.borders[reverse + bottom] === x) {
+			this.rotate();
+			this.flipHorizontal();
+			this.flipLateral();
+			return true;
+		}
+		return false;
+	}
+
+	match(x, dir) {
+		if (this.matchLeft(x)) {
+			this.orient(dir);
+			return true;
+		}
+		return false;
+	}
+
+	debugData() {
+		console.log(this.data[0].join(''));
+		console.log(this.data[1].join(''));
+		console.log(this.data[2].join(''));
+		console.log(this.data[3].join(''));
+		console.log(this.data[4].join(''));
+		console.log(this.data[5].join(''));
+		console.log(this.data[6].join(''));
+		console.log(this.data[7].join(''));
+		console.log(this.data[8].join(''));
+		console.log(this.data[9].join(''));
+	}
+
+	debugBorders() {
+		console.log(`[${this.borders.join(", ")}]`);
+		console.log(`Left: ${pad(this.borders[left].toString(2), 10, '0')}`);
+		console.log(`Right: ${pad(this.borders[right].toString(2), 10, '0')}`);
+		console.log(`Top: ${pad(this.borders[top].toString(2), 10, '0')}`);
+		console.log(`Bottom: ${pad(this.borders[bottom].toString(2), 10, '0')}`);
+	}
+
+	toString() {
+		return this.data.map(r => r.join('')).join('\n');
+	}
+}
+
+class Map extends CharMap {
+	constructor(data) {
+		super(data);
+		let monster = [
+			"                  # ",
+			"#    ##    ##    ###",
+			" #  #  #  #  #  #   "
+		];
+		this.monster = monster.map(l => l.split(''));
+	}
+
+	static fromTiles(tiles) {
+		let data = [];
+		tiles.forEach(r => {
+			let rows = [];
+			r.forEach(t => {
+				let d = t.data.slice(1, t.data.length - 1);
+				for (let i = 0; i < d.length; i++) {
+					if (rows[i] === undefined) { rows[i] = ""; }
+					rows[i] = rows[i] + d[i].slice(1, d[i].length - 1).map(c => c === '1' ? '#' : '.').join('');
+				}
+			});
+			data = data.concat(rows);
+		});
+		return new Map(data.map(l => l.split('')));
+	}
+
+	isMonster(r, c) {
+		for (let mr = 0; mr < this.monster.length; mr++) {
+			for (let mc = 0; mc < this.monster[mr].length; mc++) {
+				if (this.monster[mr][mc] === '#' && this.data[r + mr][c + mc] !== '#') { return false; }
+			}
+		}
+		return true;
+	}
+
+	countMonsters() {
+		let m = 0;
+		for (let r = 0; r < (this.data.length - this.monster.length + 1); r++) {
+			for (let c = 0; c < (this.data[r].length - this.monster[0].length + 1); c++) {
+				if (this.isMonster(r, c)) { m++; }
+			}
+		}
+		return m;
+	}
+
+	replaceMonster(r, c) {
+		for (let mr = 0; mr < this.monster.length; mr++) {
+			for (let mc = 0; mc < this.monster[mr].length; mc++) {
+				if (this.monster[mr][mc] === '#') { this.data[r + mr][c + mc] = '+'; }
+			}
+		}
+	}
+
+	replaceMonsters() {
+		for (let r = 0; r < (this.data.length - this.monster.length + 1); r++) {
+			for (let c = 0; c < (this.data[r].length - this.monster[0].length + 1); c++) {
+				if (this.isMonster(r, c)) { this.replaceMonster(r, c); }
+			}
+		}
+	}
+
+	countRough() {
+		return this.data.map(l => l.filter(c => c === '#').length).reduce((a, b) => a + b, 0);
+	}
+
+	output() {
+		return this.data.map(l => l.join(''));
+	}
+}
+
+function pad(s, n, c) {
+	while (s.length < n) { s = c + s; }
+	return s;
+}
+
 export class S20a extends Solver {
+	matchRow(tile, unmatched) {
+		let row = [tile];
+		let match = unmatched.filter(t => t.match(tile.borders[left], left));
+		while (match.length === 1) {
+			let x = match[0];
+			row.unshift(x);
+			unmatched = unmatched.filter(t => t.id !== x.id);
+			match = unmatched.filter(t => t.match(x.borders[left], left));
+		}
+		match = unmatched.filter(t => t.match(tile.borders[right], right));
+		while (match.length === 1) {
+			let x = match[0];
+			row.push(x);
+			unmatched = unmatched.filter(t => t.id !== x.id);
+			match = unmatched.filter(t => t.match(x.borders[right], right));
+		}
+		return row;
+	}
+
+	matchColumn(tile, unmatched) {
+		let col = [tile];
+		let match = unmatched.filter(t => t.match(tile.borders[top], top));
+		while (match.length === 1) {
+			let x = match[0];
+			col.unshift(x);
+			unmatched = unmatched.filter(t => t.id !== x.id);
+			match = unmatched.filter(t => t.match(x.borders[top], top));
+		}
+		match = unmatched.filter(t => t.match(tile.borders[bottom], bottom));
+		while (match.length === 1) {
+			let x = match[0];
+			col.push(x);
+			unmatched = unmatched.filter(t => t.id !== x.id);
+			match = unmatched.filter(t => t.match(x.borders[bottom], bottom));
+		}
+		return col;
+	}
+
+	findMonsters(map) {
+		let m = Map.fromTiles(map);
+		let c = m.countMonsters();
+		for (let i = 0; i < 4; i++) {
+			if (0 === c) {
+				m.rotate();
+				c = m.countMonsters();
+			}
+		}
+		if (0 === c) {
+			// m.flipHorizontal();
+			c = m.countMonsters();
+		}
+		if (0 === c) {
+			m.flipLateral();
+			c = m.countMonsters();
+		}
+		m.replaceMonsters();
+		this.setState({ map: m, monsters: c, rough: m.countRough() });
+	}
+
+	match(matched, unmatched) {
+		let start = unmatched[0];
+		unmatched = unmatched.filter(t => t.id !== start.id);
+		let col = this.matchColumn(start, unmatched);
+		matched = matched.concat(col);
+		col.forEach(m => {
+			unmatched = unmatched.filter(t => t.id !== m.id);
+		});
+		let map = col.map(r => {
+			let row = this.matchRow(r, unmatched);
+			row.forEach(m => {
+				unmatched = unmatched.filter(t => t.id !== m.id);
+				if (!matched.includes(m)) { matched.push(m) }
+			});
+			return row;
+		});
+		this.setState({ matched: matched, unmatched: unmatched, map: Map.fromTiles(map), answer: map[0][0].id * map[0][11].id * map[11][0].id * map[11][11].id });
+		setTimeout(() => this.findMonsters(map), 1);
+	}
+
 	solve(input) {
-		input = input.split('\n');
-		this.setState({ solution: `Input length: ${input.length}` });
+		let tiles = input.split("\n\n").map(t => Tile.fromText(t));
+		let matched = [];
+		this.setState({ matched: matched, unmatched: tiles });
+		setTimeout(() => this.match(matched, tiles), 1);
+	}
+
+	customRender() {
+		let { matched, unmatched, map, answer, monsters, rough } = this.state;
+		if (matched === undefined || unmatched === undefined) { return <div></div>; }
+		let i = 0;
+		return <div>
+			<p>{`Tiles: ${matched.length + unmatched.length}`}</p>
+			<p>{`Matched tiles: ${matched.length}`}</p>
+			<p>{`Unmatched tiles: ${unmatched.length}`}</p>
+			<p>Answer: {answer}</p>
+			<p>Monsters: {monsters}</p>
+			<p>Rough: {rough}</p>
+			<p>&nbsp;</p>
+			{map && map.output().map(l => <p key={i++} style={{ fontFamily: "monospace" }}>{l}</p>)}
+		</div>;
 	}
 }
 
