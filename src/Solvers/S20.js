@@ -1,44 +1,22 @@
 import React from 'react';
 import Solver from './Solver';
+import { ValueGrid, drawFilledRect, drawFilledCircle, drawLine, pad } from '../util';
 
 const left = 0;
 const right = 1;
 const top = 2;
 const bottom = 3;
 const reverse = 4;
+const pixel_size = 4;
 
 function reverseArray(a) {
 	return [].concat(a).reverse();
 }
 
-class CharMap {
-	constructor(data) {
-		this.data = data;
-	}
-
-	rotate() { // clockwise
-		let d = this.data.map(r => []);
-		for (let r = this.data.length - 1; r >= 0; r--) {
-			for (let c = 0; c < this.data[r].length; c++) {
-				d[c].push(this.data[r][c]);
-			}
-		}
-		this.data = d;
-	}
-
-	flipLateral() {
-		this.data = this.data.map(r => r.reverse());
-	}
-
-	flipHorizontal() {
-		this.data.reverse();
-	}
-}
-
-class Tile {
+class Tile extends ValueGrid {
 	constructor(id, data) {
+		super(data);
 		this.id = id;
-		this.data = data;
 		this.borders = [];
 		this.calculateBorders();
 	}
@@ -67,75 +45,62 @@ class Tile {
 		this.borders[reverse + right] = parseInt(reverseArray(r).join(''), 2);
 	}
 
-	rotate() { // clockwise
-		let d = this.data.map(r => []);
-		for (let r = this.data.length - 1; r >= 0; r--) {
-			for (let c = 0; c < this.data[r].length; c++) {
-				d[c].push(this.data[r][c]);
-			}
-		}
-		this.data = d;
-		this.calculateBorders();
-	}
-
-	flipLateral() {
-		this.data = this.data.map(r => r.reverse());
-		this.calculateBorders();
-	}
-
-	flipHorizontal() {
-		this.data.reverse();
-		this.calculateBorders();
-	}
-
 	orient(dir) {
 		if (dir === right) {
 			this.flipLateral();
 		}
 		if (dir === top) {
-			this.rotate();
+			this.clockwise();
 			this.flipLateral();
 		}
 		if (dir === bottom) {
 			this.flipLateral();
-			this.rotate();
+			this.clockwise();
 			this.flipLateral();
 		}
+		this.calculateBorders();
 	}
 
 	matchLeft(x) {
 		if (this.borders[right] === x) { return true; }
 		if (this.borders[reverse + right] === x) {
 			this.flipHorizontal();
+			this.calculateBorders();
 			return true;
 		}
 		if (this.borders[left] === x) {
 			this.flipLateral();
+			this.calculateBorders();
 			return true;
 		}
 		if (this.borders[reverse + left] === x) {
 			this.flipHorizontal();
 			this.flipLateral();
+			this.calculateBorders();
 			return true;
 		}
 		if (this.borders[top] === x) {
-			this.rotate();
+			this.clockwise();
+			this.calculateBorders();
 			return true;
 		}
 		if (this.borders[reverse + top] === x) {
-			this.rotate();
+			this.clockwise();
 			this.flipHorizontal();
+			this.calculateBorders();
 			return true;
 		}
 		if (this.borders[bottom] === x) {
-			this.rotate();
+			this.clockwise();
 			this.flipLateral();
+			this.calculateBorders();
 			return true;
 		}
 		if (this.borders[reverse + bottom] === x) {
-			this.rotate();
+			this.clockwise();
 			this.flipHorizontal();
 			this.flipLateral();
+			this.calculateBorders();
 			return true;
 		}
 		return false;
@@ -175,7 +140,7 @@ class Tile {
 	}
 }
 
-class Map extends CharMap {
+class Map extends ValueGrid {
 	constructor(data) {
 		super(data);
 		let monster = [
@@ -240,18 +205,14 @@ class Map extends CharMap {
 	countRough() {
 		return this.data.map(l => l.filter(c => c === '#').length).reduce((a, b) => a + b, 0);
 	}
-
-	output() {
-		return this.data.map(l => l.join(''));
-	}
-}
-
-function pad(s, n, c) {
-	while (s.length < n) { s = c + s; }
-	return s;
 }
 
 export class S20a extends Solver {
+	constructor(props) {
+		super(props);
+		this.canvas = React.createRef();
+	}
+
 	matchRow(tile, unmatched) {
 		let row = [tile];
 		let match = unmatched.filter(t => t.match(tile.borders[left], left));
@@ -290,12 +251,28 @@ export class S20a extends Solver {
 		return col;
 	}
 
+	drawImage(map) {
+		const ctx = this.canvas.current.getContext("2d");
+		drawFilledRect(ctx, 0, 0, 96 * pixel_size, 96 * pixel_size, "#CFCFFF");
+		for (let r = 0; r < map.data.length; r++) {
+			for (let c = 0; c < map.data[r].length; c++) {
+				if (map.data[r][c] === '+') {
+					drawFilledCircle(ctx, c * pixel_size, r * pixel_size, pixel_size / 2, "#1F9F1F");
+				}
+				if (map.data[r][c] === '#') {
+					drawLine(ctx, c * pixel_size, (r + 0.5) * pixel_size, (c + 0.5) * pixel_size, r * pixel_size, "#7F7FCF", 1)
+					drawLine(ctx, (c + 1) * pixel_size, (r + 0.5) * pixel_size, (c + 0.5) * pixel_size, r * pixel_size, "#7F7FCF", 1)
+				}
+			}
+		}
+	}
+
 	findMonsters(map) {
 		let m = Map.fromTiles(map);
 		let c = m.countMonsters();
 		for (let i = 0; i < 4; i++) {
 			if (0 === c) {
-				m.rotate();
+				m.clockwise();
 				c = m.countMonsters();
 			}
 		}
@@ -309,6 +286,7 @@ export class S20a extends Solver {
 		}
 		m.replaceMonsters();
 		this.setState({ map: m, monsters: c, rough: m.countRough() });
+		setTimeout(() => this.drawImage(m), 1);
 	}
 
 	match(matched, unmatched) {
@@ -339,9 +317,8 @@ export class S20a extends Solver {
 	}
 
 	customRender() {
-		let { matched, unmatched, map, answer, monsters, rough } = this.state;
-		if (matched === undefined || unmatched === undefined) { return <div></div>; }
-		let i = 0;
+		let { matched, unmatched, answer, monsters, rough } = this.state;
+		if (matched === undefined || unmatched === undefined) { return <div><canvas id="image" ref={this.canvas} width={96 * pixel_size} height={96 * pixel_size} /></div>; }
 		return <div>
 			<p>{`Tiles: ${matched.length + unmatched.length}`}</p>
 			<p>{`Matched tiles: ${matched.length}`}</p>
@@ -350,7 +327,7 @@ export class S20a extends Solver {
 			<p>Monsters: {monsters}</p>
 			<p>Rough: {rough}</p>
 			<p>&nbsp;</p>
-			{map && map.output().map(l => <p key={i++} style={{ fontFamily: "monospace" }}>{l}</p>)}
+			<canvas id="image" ref={this.canvas} width={96 * pixel_size} height={96 * pixel_size} />
 		</div>;
 	}
 }
