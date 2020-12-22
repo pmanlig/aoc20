@@ -1,27 +1,15 @@
 // import React from 'react';
 import Solver from './Solver';
 
-class State {
-	constructor(d1, d2) {
-		this.deck1 = [].concat(d1);
-		this.deck2 = [].concat(d2);
-		this.hash = this.calcHash();
-	}
+// I do not understand how this can work
+function magic(p1, p2) {
+	return p1.reduce((a, b, i) => (a * b * (i + 2)), 1) +
+		p2.reduce((a, b, i) => (a * b * (i + 2)), 1) * 2;
+}
 
-	cmp(s) {
-		if (this.deck1.length !== s.deck1.length || this.deck2.length !== s.deck2.length) { return false; }
-		for (let i = 0; i < this.deck1.length; i++) {
-			if (this.deck1[i] !== s.deck1[i]) { return false; }
-		}
-		for (let i = 0; i < this.deck2.length; i++) {
-			if (this.deck2[i] !== s.deck2[i]) { return false; }
-		}
-		return true;
-	}
-
-	calcHash() {
-		return this.deck1[0] * 50 + this.deck2[0];
-	}
+// eslint-disable-next-line
+function arrayEq(a, b) {
+	return a.length === b.length && a.every((v, i) => v === b[i]);
 }
 
 export class S22a extends Solver {
@@ -47,23 +35,24 @@ export class S22a extends Solver {
 	}
 
 	recurse(p1, p2) {
-		let hist = {};
+		let hist = new Map();
 		while (p1.length > 0 && p2.length > 0) {
-			let ns = new State(p1, p2);
-			if (hist[ns.hash] === undefined) { hist[ns.hash] = [ns]; }
-			else if (hist[ns.hash].some(s => ns.cmp(s))) { return { p1win: true, deck: p1 }; }
-			else { hist[ns.hash].push(ns); }
+			let ns = magic(p1, p2);
+			if (!hist.has(ns)) { hist.set(ns); }
+			else { return { p1win: true, deck: p1 }; }
+			// else if (hist.get(ns).some(x => arrayEq(x[0], p1) && arrayEq(x[1], p2))) { return { p1win: true, deck: p1 }; }
+			// else { hist.get(ns).push([p1, p2]); }
 			let p1wins = p1[0] > p2[0];
 			if (p1[0] < p1.length && p2[0] < p2.length) { p1wins = this.recurse(p1.slice(1, 1 + p1[0]), p2.slice(1, 1 + p2[0])).p1win; }
 			if (p1wins) {
-				p1.push(p1.shift());
-				p1.push(p2.shift());
+				p1 = p1.slice(1).concat([p1[0], p2[0]]);
+				p2 = p2.slice(1);
 			} else {
-				p2.push(p2.shift());
-				p2.push(p1.shift());
+				p2 = p2.slice(1).concat([p2[0], p1[0]]);
+				p1 = p1.slice(1);
 			}
 		}
-		return { p1win: p1.length > 0, deck: p1.concat(p2) };
+		return { p1win: p1.length > 0, deck: p1.length > 0 ? p1 : p2 };
 	}
 
 	solve(input) {
@@ -73,14 +62,13 @@ export class S22a extends Solver {
 		p1.cards = input[0].map(c => parseInt(c, 10));
 		p2.cards = input[1].map(c => parseInt(c, 10));
 		let score = this.combat(p1.cards, p2.cards);
-		this.setState({ solution: `Players: ${input.length}\n${p1.name} ${p1.cards.length} cards\n${p2.name} ${p2.cards.length} cards\nFinal score: ${score}\nRecursive score: Calculating...` });
+		this.setState({ solution: `Players: ${input.length}\n${p1.name} ${p1.cards.length} cards\n${p2.name} ${p2.cards.length} cards\nCombat score: ${score}\nRecursive score: Calculating...` });
 		setTimeout(() => {
 			p1.cards = input[0].map(c => parseInt(c, 10));
 			p2.cards = input[1].map(c => parseInt(c, 10));
 			// let recursiveScore = this.score(this.recurse([9, 2, 6, 3, 1], [5, 8, 4, 7, 10]).deck);
-			// console.log(this.recurse(p1.cards, p2.cards));
 			let recursiveScore = this.score(this.recurse(p1.cards, p2.cards).deck);
-			this.setState({ solution: `Players: ${input.length}\n${p1.name} ${p1.cards.length} cards\n${p2.name} ${p2.cards.length} cards\nFinal score: ${score}\nRecursive score: ${recursiveScore}` });
+			this.setState({ solution: `Players: ${input.length}\n${p1.name} ${p1.cards.length} cards\n${p2.name} ${p2.cards.length} cards\nCombat score: ${score}\nRecursive score: ${recursiveScore}` });
 		}, 100);
 	}
 }
